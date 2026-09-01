@@ -18,13 +18,61 @@ DATA = {
     },
     # можете добавить свои рецепты ;)
 }
+def omlet_view(request):
+    # Получаем базовый рецепт омлета из глобальных данных
+    recipe = dict(data.get('omlet', {}))
+    
+    # Обрабатываем необязательный параметр servings
+    servings = request.GET.get('servings')
+    if servings is not None:
+        # Преобразуем строку в число и умножаем ингредиенты
+        try:
+            servings = int(servings)
+            recipe = {key: value * servings for key, value in recipe.items()}
+        except ValueError:
+            # Если ввели не число, оставляем как есть (1 порция)
+            pass
+    
+    # Формируем контекст как в примере
+    context = {
+        'recipe': recipe
+    }
+    
+    # Рендерим шаблон (предполагается, что шаблон называется omlet.html)
+    return render(request, 'calculator/omlet.html', context)
 
-# Напишите ваш обработчик. Используйте DATA как источник данных
-# Результат - render(request, 'calculator/index.html', context)
-# В качестве контекста должен быть передан словарь с рецептом:
-# context = {
-#   'recipe': {
-#     'ингредиент1': количество1,
-#     'ингредиент2': количество2,
-#   }
-# }
+
+def pasta_view(request):
+    recipe = dict(data.get('pasta', {}))
+    
+    servings = request.GET.get('servings')
+    if servings is not None:
+        try:
+            servings = int(servings)
+            recipe = {key: value * servings for key, value in recipe.items()}
+        except ValueError:
+            pass
+    
+    context = {
+        'recipe': recipe
+    }
+    
+    return render(request, 'calculator/pasta.html', context)
+
+
+def buter_view(request):
+    recipe = dict(data.get('buter', {}))
+    
+    servings = request.GET.get('servings')
+    if servings is not None:
+        try:
+            servings = int(servings)
+            recipe = {key: value * servings for key, value in recipe.items()}
+        except ValueError:
+            pass
+    
+    context = {
+        'recipe': recipe
+    }
+    
+    return render(request, 'calculator/buter.html', context)
