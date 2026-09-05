@@ -1,43 +1,56 @@
 from rest_framework import serializers
+from .models import Product, Stock, StockProduct
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    # настройте сериализатор для продукта
-    pass
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'description']
 
 
 class ProductPositionSerializer(serializers.ModelSerializer):
-    # настройте сериализатор для позиции продукта на складе
-    pass
+    class Meta:
+        model = StockProduct
+        fields = ['product', 'quantity', 'price']
 
 
 class StockSerializer(serializers.ModelSerializer):
-    positions = ProductPositionSerializer(many=True)
+    positions = ProductPositionSerializer(many=True, required=False)
 
-    # настройте сериализатор для склада
+    class Meta:
+        model = Stock
+        fields = ['id', 'name', 'address', 'positions']
 
     def create(self, validated_data):
-        # достаем связанные данные для других таблиц
-        positions = validated_data.pop('positions')
+        # Достаем позиции (если они есть), иначе пустой список
+        positions = validated_data.pop('positions', [])
 
-        # создаем склад по его параметрам
+        # Создаем склад
         stock = super().create(validated_data)
 
-        # здесь вам надо заполнить связанные таблицы
-        # в нашем случае: таблицу StockProduct
-        # с помощью списка positions
+        # Создаем позиции на складе
+        for position_data in positions:
+            StockProduct.objects.create(stock=stock, **position_data)
 
         return stock
 
     def update(self, instance, validated_data):
-        # достаем связанные данные для других таблиц
-        positions = validated_data.pop('positions')
+        # Достаем позиции (если они есть)
+        positions = validated_data.pop('positions', None)
 
-        # обновляем склад по его параметрам
+        # Обновляем склад
         stock = super().update(instance, validated_data)
 
-        # здесь вам надо обновить связанные таблицы
-        # в нашем случае: таблицу StockProduct
-        # с помощью списка positions
+        # Обновляем или создаем позиции
+        if positions is not None:
+            for position_data in positions:
+                StockProduct.objects.update_or_create(
+                    stock=stock,
+                    product=position_data['product'],
+                    defaults={
+                        'quantity': position_data.get('quantity', 1),
+                        'price': position_data.get('price', 0),
+                    }
+                )
 
         return stock
